@@ -180,7 +180,7 @@ public class DescribeCommand extends GitCommand<DescribeResult> {
   public DescribeCommand forceLongFormat(@Nullable Boolean forceLongFormat) {
     if (forceLongFormat != null) {
       this.forceLongFormat = forceLongFormat;
-      log("--long = %s", forceLongFormat);
+      log("--long =", forceLongFormat);
     }
     return this;
   }
@@ -312,20 +312,21 @@ public class DescribeCommand extends GitCommand<DescribeResult> {
     // check if dirty
     boolean dirty = findDirtyState(repo);
 
-    if (hasTags(headCommit, tagObjectIdToName)) {
+    if (hasTags(headCommit, tagObjectIdToName) && !forceLongFormat) {
       String tagName = tagObjectIdToName.get(headCommit).iterator().next();
-      log("The commit we're on is a Tag ([",tagName,"]), returning.");
+      log("The commit we're on is a Tag ([",tagName,"]) and forceLongFormat == false, returning.");
 
       return new DescribeResult(tagName, dirty, dirtyOption);
     }
 
-    if (foundZeroTags(tagObjectIdToName)) {
+    // get commits, up until the nearest tag
+    List<RevCommit> commits = findCommitsUntilSomeTag(repo, headCommit, tagObjectIdToName);
+
+    // if there is no tags or any tag is not on that branch then return generic describe
+    if (foundZeroTags(tagObjectIdToName) || commits.isEmpty()) {
       return new DescribeResult(objectReader, headCommitId, dirty, dirtyOption)
           .withCommitIdAbbrev(abbrev);
     }
-
-    // get commits, up until the nearest tag
-    List<RevCommit> commits = findCommitsUntilSomeTag(repo, headCommit, tagObjectIdToName);
 
     // check how far away from a tag we are
 
@@ -350,7 +351,7 @@ public class DescribeCommand extends GitCommand<DescribeResult> {
           .withCommitIdAbbrev(abbrev);
 
     } else if (howFarFromWhichTag.first > 0 || forceLongFormat) {
-      return new DescribeResult(objectReader, howFarFromWhichTag.second, howFarFromWhichTag.first, headCommitId, dirty, dirtyOption)
+      return new DescribeResult(objectReader, howFarFromWhichTag.second, howFarFromWhichTag.first, headCommitId, dirty, dirtyOption, forceLongFormat)
           .withCommitIdAbbrev(abbrev); // we're a bit away from a tag
 
     } else if (howFarFromWhichTag.first == 0) {
@@ -425,7 +426,7 @@ public class DescribeCommand extends GitCommand<DescribeResult> {
         }
       }
 
-      throw new RuntimeException("Did not find any commits until some tag");
+      return Collections.emptyList();
     } catch (Exception e) {
       throw new RuntimeException("Unable to find commits until some tag", e);
     }

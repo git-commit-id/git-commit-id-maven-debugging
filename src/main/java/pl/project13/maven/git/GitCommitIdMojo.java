@@ -17,28 +17,28 @@
 
 package pl.project13.maven.git;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import pl.project13.jgit.DescribeCommand;
-import pl.project13.jgit.DescribeResult;
 import pl.project13.maven.git.log.LoggerBridge;
 import pl.project13.maven.git.log.MavenLoggerBridge;
+import pl.project13.maven.git.util.PropertyManager;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -61,6 +61,7 @@ public class GitCommitIdMojo extends AbstractMojo {
   public static final String COMMIT_ID = "commit.id";
   public static final String COMMIT_ID_ABBREV = "commit.id.abbrev";
   public static final String COMMIT_DESCRIBE = "commit.id.describe";
+  public static final String COMMIT_SHORT_DESCRIBE = "commit.id.describe-short";
   public static final String BUILD_AUTHOR_NAME = "build.user.name";
   public static final String BUILD_AUTHOR_EMAIL = "build.user.email";
   public static final String BUILD_TIME = "build.time";
@@ -74,7 +75,7 @@ public class GitCommitIdMojo extends AbstractMojo {
   /**
    * The maven project.
    *
-   * @parameter expression="${project}"
+   * @parameter property="project"
    * @readonly
    */
   @SuppressWarnings("UnusedDeclaration")
@@ -83,7 +84,7 @@ public class GitCommitIdMojo extends AbstractMojo {
   /**
    * Contains the full list of projects in the reactor.
    *
-   * @parameter expression="${reactorProjects}"
+   * @parameter property="reactorProjects"
    * @readonly
    */
   @SuppressWarnings("UnusedDeclaration")
@@ -115,7 +116,7 @@ public class GitCommitIdMojo extends AbstractMojo {
    * Specifies whether the execution in pom projects should be skipped.
    * Override this value to false if you want to force the plugin to run on 'pom' packaged projects.
    *
-   * @parameter expression="${git.skipPoms}" default-value="true"
+   * @parameter parameter="git.skipPoms" default-value="true"
    */
   @SuppressWarnings("UnusedDeclaration")
   private boolean skipPoms;
@@ -186,13 +187,21 @@ public class GitCommitIdMojo extends AbstractMojo {
   private int abbrevLength;
 
   /**
+   * The format to save properties in. Valid options are "properties" (default) and "json".
+   *
+   * @parameter default-value="properties"
+   */
+  @SuppressWarnings("UnusedDeclaration")
+  private String format;
+
+  /**
    * The prefix to expose the properties on, for example 'git' would allow you to access '${git.branch}'
    *
    * @parameter default-value="git"
    */
   @SuppressWarnings("UnusedDeclaration")
   private String prefix;
-  private String prefixDot;
+  private String prefixDot = "";
 
   /**
    * The date format to be used for any dates exported by this plugin.
@@ -228,6 +237,43 @@ public class GitCommitIdMojo extends AbstractMojo {
   private boolean failOnUnableToExtractRepoInfo;
 
   /**
+   * By default the plugin will use a jgit implementation as a source of a information about the repository. You can
+   * use a native GIT executable to fetch information about the repository, witch is in most cases faster but requires
+   * a git executable to be installed in system.
+   *
+   * @parameter default-value="false"
+   * @since 2.1.9
+   */
+  @SuppressWarnings("UnusedDeclaration")
+  private boolean useNativeGit;
+
+  /**
+   * Skip the plugin execution.
+   *
+   * @parameter default-value="false"
+   * @since 2.1.8
+   */
+  @SuppressWarnings("UnusedDeclaration")
+  private boolean skip = false;
+
+  /**
+   * Can be used to exclude certain properties from being emited into the resulting file.
+   * May be useful when you want to hide {@code git.remote.origin.url} (maybe because it contains your repo password?),
+   * or the email of the committer etc.
+   *
+   * Each value may be globbing, that is, you can write {@code git.commit.user.*} to exclude both, the {@code name},
+   * as well as {@code email} properties from being emitted into the resulting files.
+   *
+   * Please note that the strings here are Java regexes ({@code .*} is globbing, not plain {@code *}).
+   *
+   * @parameter
+   * @since 2.1.9
+   */
+  @SuppressWarnings("UnusedDeclaration")
+  private List<String> excludeProperties = Collections.emptyList();
+
+
+  /**
    * The properties we store our data in and then expose them
    */
   private Properties properties;
@@ -240,6 +286,11 @@ public class GitCommitIdMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     // Set the verbose setting now it should be correctly loaded from maven.
     loggerBridge.setVerbose(verbose);
+
+    if (skip) {
+      log("skip is true, return");
+      return;
+    }
 
     if (isPomProject(project) && skipPoms) {
       log("isPomProject is true and skipPoms is true, return");
@@ -255,13 +306,17 @@ public class GitCommitIdMojo extends AbstractMojo {
       log("dotGitDirectory is null, aborting execution!");
       return;
     }
-
+    
     try {
       properties = initProperties();
-      prefixDot = prefix + ".";
+
+      String trimmedPrefix = prefix.trim();
+      prefixDot = trimmedPrefix.equals("") ? "" : trimmedPrefix + ".";
 
       loadGitData(properties);
       loadBuildTimeData(properties);
+      loadShortDescribe(properties);
+      filterNot(properties, excludeProperties);
       logProperties(properties);
 
       if (generateGitPropertiesFile) {
@@ -271,10 +326,35 @@ public class GitCommitIdMojo extends AbstractMojo {
       if (injectAllReactorProjects) {
         appendPropertiesToReactorProjects(properties);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
+      e.printStackTrace();
       handlePluginFailure(e);
     }
 
+  }
+
+  private void filterNot(Properties properties, @Nullable List<String> exclusions) {
+    if (exclusions == null)
+      return;
+
+    List<Predicate<CharSequence>> excludePredicates = Lists.transform(exclusions, new Function<String, Predicate<CharSequence>>() {
+      @Override
+      public Predicate<CharSequence> apply(String exclude) {
+        return Predicates.containsPattern(exclude);
+      }
+    });
+
+    Predicate<CharSequence> shouldExclude = Predicates.alwaysFalse();
+    for (Predicate<CharSequence> predicate : excludePredicates) {
+      shouldExclude = Predicates.or(shouldExclude, predicate);
+    }
+
+    for (String key : properties.stringPropertyNames()) {
+      if (shouldExclude.apply(key)) {
+        loggerBridge.debug("shouldExclude.apply(" + key +") = " + shouldExclude.apply(key));
+        properties.remove(key);
+      }
+    }
   }
 
   /**
@@ -288,7 +368,7 @@ public class GitCommitIdMojo extends AbstractMojo {
     if (failOnUnableToExtractRepoInfo) {
       throw new MojoExecutionException("Could not complete Mojo execution...", e);
     } else {
-      loggerBridge.error();
+      loggerBridge.error(e.getMessage(), com.google.common.base.Throwables.getStackTraceAsString(e));
     }
   }
 
@@ -316,7 +396,8 @@ public class GitCommitIdMojo extends AbstractMojo {
    *
    * @return the File representation of the .git directory
    */
-  private File lookupGitDirectory() throws MojoExecutionException {
+  @VisibleForTesting
+  File lookupGitDirectory() throws MojoExecutionException {
     return new GitDirLocator(project, reactorProjects).lookupGitDirectory(dotGitDirectory);
   }
 
@@ -348,106 +429,61 @@ public class GitCommitIdMojo extends AbstractMojo {
     SimpleDateFormat smf = new SimpleDateFormat(dateFormat);
     put(properties, BUILD_TIME, smf.format(commitDate));
   }
+  
+  void loadShortDescribe(@NotNull Properties properties) {
+    //removes git hash part from describe
+    String commitDescribe = properties.getProperty(prefixDot + COMMIT_DESCRIBE);
+
+    if (commitDescribe != null) {
+      int startPos = commitDescribe.indexOf("-g");
+      if (startPos > 0) {
+        String commitShortDescribe;
+        int endPos = commitDescribe.indexOf('-', startPos + 1);
+        if (endPos < 0) {
+          commitShortDescribe = commitDescribe.substring(0, startPos);
+        } else {
+          commitShortDescribe = commitDescribe.substring(0, startPos) + commitDescribe.substring(endPos);
+        }
+        put(properties, COMMIT_SHORT_DESCRIBE, commitShortDescribe);
+      } else {
+        put(properties, COMMIT_SHORT_DESCRIBE, commitDescribe);
+      }
+    }
+  }
 
   void loadGitData(@NotNull Properties properties) throws IOException, MojoExecutionException {
-    Repository git = getGitRepository();
-    ObjectReader objectReader = git.newObjectReader();
-
-    // git.user.name
-    String userName = git.getConfig().getString("user", null, "name");
-    put(properties, BUILD_AUTHOR_NAME, userName);
-
-    // git.user.email
-    String userEmail = git.getConfig().getString("user", null, "email");
-    put(properties, BUILD_AUTHOR_EMAIL, userEmail);
-
-    // more details parsed out bellow
-    Ref HEAD = git.getRef(Constants.HEAD);
-    if (HEAD == null) {
-      throw new MojoExecutionException("Could not get HEAD Ref, are you sure you've set the dotGitDirectory property of this plugin to a valid path?");
-    }
-    RevWalk revWalk = new RevWalk(git);
-    RevCommit headCommit = revWalk.parseCommit(HEAD.getObjectId());
-    revWalk.markStart(headCommit);
-
-    try {
-      // git.branch
-      String branch = git.getBranch();
-      put(properties, BRANCH, branch);
-
-      // git.commit.id.describe
-      maybePutGitDescribe(properties, git);
-
-      // git.commit.id
-      put(properties, COMMIT_ID, headCommit.getName());
-
-      // git.commit.id.abbrev
-      putAbbrevCommitId(objectReader, properties, headCommit, abbrevLength);
-
-      // git.commit.author.name
-      String commitAuthor = headCommit.getAuthorIdent().getName();
-      put(properties, COMMIT_AUTHOR_NAME, commitAuthor);
-
-      // git.commit.author.email
-      String commitEmail = headCommit.getAuthorIdent().getEmailAddress();
-      put(properties, COMMIT_AUTHOR_EMAIL, commitEmail);
-
-      // git commit.message.full
-      String fullMessage = headCommit.getFullMessage();
-      put(properties, COMMIT_MESSAGE_FULL, fullMessage);
-
-      // git commit.message.short
-      String shortMessage = headCommit.getShortMessage();
-      put(properties, COMMIT_MESSAGE_SHORT, shortMessage);
-
-      long timeSinceEpoch = headCommit.getCommitTime();
-      Date commitDate = new Date(timeSinceEpoch * 1000); // git is "by sec" and java is "by ms"
-      SimpleDateFormat smf = new SimpleDateFormat(dateFormat);
-      put(properties, COMMIT_TIME, smf.format(commitDate));
-
-      // git remote.origin.url
-      String remoteOriginUrl = git.getConfig().getString("remote", "origin", "url");
-      put(properties, REMOTE_ORIGIN_URL, remoteOriginUrl);
-    } finally {
-      revWalk.dispose();
+    if (useNativeGit) {
+      loadGitDataWithNativeGit(properties);
+    }else{
+      loadGitDataWithJGit(properties);
     }
   }
 
-  private void putAbbrevCommitId(ObjectReader objectReader, Properties properties, RevCommit headCommit, int abbrevLength) throws MojoExecutionException {
-    if (abbrevLength < 2 || abbrevLength > 40) {
-      throw new MojoExecutionException("Abbreviated commit id lenght must be between 2 and 40, inclusive! Was [%s]. ".codePointBefore(abbrevLength) +
-                                           "Please fix your configuration (the <abbrevLength/> element).");
-    }
+  void loadGitDataWithNativeGit(@NotNull Properties properties) throws IOException, MojoExecutionException {
+    File basedir = project.getBasedir().getCanonicalFile();
+    NativeGitProvider nativeGitProvider = NativeGitProvider
+      .on(basedir)
+      .withLoggerBridge(loggerBridge)
+			.setVerbose(verbose)
+      .setPrefixDot(prefixDot)
+      .setAbbrevLength(abbrevLength)
+			.setDateFormat(dateFormat)
+      .setGitDescribe(gitDescribe);
 
-    try {
-      AbbreviatedObjectId abbreviatedObjectId = objectReader.abbreviate(headCommit, abbrevLength);
-      put(properties, COMMIT_ID_ABBREV, abbreviatedObjectId.name());
-    } catch (IOException e) {
-      throw new MojoExecutionException("Unable to abbreviate commit id! " +
-                                           "You may want to investigate the <abbrevLength/> element in your configuration.", e);
-    }
+    nativeGitProvider.loadGitData(properties);    
   }
 
-  void maybePutGitDescribe(@NotNull Properties properties, @NotNull Repository repository) throws MojoExecutionException {
-    if (gitDescribe == null || !gitDescribe.isSkip()) {
-      putGitDescribe(properties, repository);
-    }
-  }
+  void loadGitDataWithJGit(@NotNull Properties properties) throws IOException, MojoExecutionException {
+    JGitProvider jGitProvider = JGitProvider
+				.on(dotGitDirectory)
+				.withLoggerBridge(loggerBridge)
+				.setVerbose(verbose)
+				.setPrefixDot(prefixDot)
+				.setAbbrevLength(abbrevLength)
+				.setDateFormat(dateFormat)
+				.setGitDescribe(gitDescribe);
 
-  @VisibleForTesting
-  void putGitDescribe(@NotNull Properties properties, @NotNull Repository repository) throws MojoExecutionException {
-    try {
-      DescribeResult describeResult = DescribeCommand
-          .on(repository)
-          .withLoggerBridge(loggerBridge)
-          .setVerbose(verbose)
-          .apply(gitDescribe)
-          .call();
-
-      put(properties, COMMIT_DESCRIBE, describeResult.toString());
-    } catch (GitAPIException ex) {
-      throw new MojoExecutionException("Unable to obtain git.commit.id.describe information", ex);
-    }
+    jGitProvider.loadGitData(properties);
   }
 
   static int counter;
@@ -459,9 +495,14 @@ public class GitCommitIdMojo extends AbstractMojo {
       Files.createParentDirs(gitPropsFile);
 
       fileWriter = new FileWriter(gitPropsFile);
-      properties.store(fileWriter, "Generated by Git-Commit-Id-Plugin");
-
-      log("Writing properties file to [", gitPropsFile.getAbsolutePath(), "] (for module ", project.getName() + (++counter) ,")...");
+      if ("json".equalsIgnoreCase(format)) {
+        log("Writing json file to [", gitPropsFile.getAbsolutePath(), "] (for module ", project.getName() + (++counter), ")...");
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(fileWriter, properties);
+      } else {
+        log("Writing properties file to [", gitPropsFile.getAbsolutePath(), "] (for module ", project.getName() + (++counter), ")...");
+        properties.store(fileWriter, "Generated by Git-Commit-Id-Plugin");
+      }
 
     } catch (IOException ex) {
       throw new RuntimeException("Cannot create custom git properties file: " + gitPropsFile, ex);
@@ -474,43 +515,10 @@ public class GitCommitIdMojo extends AbstractMojo {
     return project.getPackaging().equalsIgnoreCase("pom");
   }
 
-  @NotNull
-  private Repository getGitRepository() throws MojoExecutionException {
-    Repository repository;
-
-    FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder();
-    try {
-      repository = repositoryBuilder
-          .setGitDir(dotGitDirectory)
-          .readEnvironment() // scan environment GIT_* variables
-          .findGitDir() // scan up the file system tree
-          .build();
-    } catch (IOException e) {
-      throw new MojoExecutionException("Could not initialize repository...", e);
-    }
-
-    if (repository == null) {
-      throw new MojoExecutionException("Could not create git repository. Are you sure '" + dotGitDirectory + "' is the valid Git root for your project?");
-    }
-
-    return repository;
-  }
-
   private void put(@NotNull Properties properties, String key, String value) {
-    putWithoutPrefix(properties, prefixDot + key, value);
-  }
-
-  private void putWithoutPrefix(@NotNull Properties properties, String key, String value) {
-    if (!isNotEmpty(value)) {
-      value = "Unknown";
-    }
-
-    log(key, value);
-    properties.put(key, value);
-  }
-
-  private boolean isNotEmpty(@Nullable String value) {
-    return null != value && !" ".equals(value.trim().replaceAll(" ", ""));
+    String keyWithPrefix = prefixDot + key;
+    log(keyWithPrefix, value);
+    PropertyManager.putWithoutPrefix(properties, keyWithPrefix, value);
   }
 
   void log(String... parts) {
@@ -526,6 +534,10 @@ public class GitCommitIdMojo extends AbstractMojo {
   }
 
   // SETTERS FOR TESTS ----------------------------------------------------
+
+  public void setFormat(String format) {
+    this.format = format;
+  }
 
   public void setVerbose(boolean verbose) {
     this.verbose = verbose;
@@ -553,5 +565,17 @@ public class GitCommitIdMojo extends AbstractMojo {
 
   public void setAbbrevLength(int abbrevLength) {
     this.abbrevLength = abbrevLength;
+  }
+
+  public void setExcludeProperties(List<String> excludeProperties) {
+    this.excludeProperties = excludeProperties;
+  }
+
+  public void useNativeGit(boolean useNativeGit){
+    this.useNativeGit = useNativeGit;
+  }
+
+  public LoggerBridge getLoggerBridge(){
+    return loggerBridge;
   }
 }
