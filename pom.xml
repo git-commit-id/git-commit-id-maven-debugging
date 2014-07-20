@@ -11,7 +11,7 @@
   <artifactId>git-commit-id-plugin</artifactId>
   <packaging>pom</packaging>
 
-  <version>2.1.10</version>
+  <version>${git-commit-id-version}</version>
 
   <name>Git Commit Id Plugin Maven Mojo</name>
   <description>
@@ -76,6 +76,7 @@
     <sourceEncoding>UTF-8</sourceEncoding>
     <outputEncoding>UTF-8</outputEncoding>
     <fest-assert.version>1.4</fest-assert.version>
+    <git-commit-id-version>2.1.11-SNAPSHOT</git-commit-id-version>
   </properties>
 
   <dependencies>
@@ -207,7 +208,8 @@
           <verbose>true</verbose>
           <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
           <generateGitPropertiesFile>true</generateGitPropertiesFile>
-          <generateGitPropertiesFilename>example/git.properties</generateGitPropertiesFilename>
+          <!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>-->
+          <generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>
         </configuration>
       </plugin>
 
