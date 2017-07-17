@@ -7,13 +7,16 @@
   <parent>
     <groupId>pl.project13.maven</groupId>
     <artifactId>git-commit-id-plugin</artifactId>
-    <version>${git-commit-id-version}</version>
+    <version>0.0.1</version>
   </parent>
 
   <groupId>pl.project13.maven</groupId>
   <artifactId>submodule-two</artifactId>
-  <version>${git-commit-id-version}</version>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
 
-
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
 </project>
