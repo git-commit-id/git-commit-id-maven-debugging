@@ -1,90 +1,90 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>9</version>
-  </parent>
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>9</version>
+	</parent>
 
-  <groupId>pl.project13.maven</groupId>
-  <artifactId>git-commit-id-plugin</artifactId>
-  <packaging>pom</packaging>
+	<groupId>pl.project13.maven</groupId>
+	<artifactId>git-commit-id-plugin</artifactId>
+	<packaging>pom</packaging>
 
-  <version>0.0.1</version>
+	<version>0.0.1</version>
 
-  <name>Git Commit Id Plugin Maven Mojo Debugging</name>
-  <description>
+	<name>Git Commit Id Plugin Maven Mojo Debugging</name>
+	<description>
    Debugging Project for https://github.com/ktoso/maven-git-commit-id-plugin
   </description>
-  <url>http://www.blog.project13.pl</url>
+	<url>http://www.blog.project13.pl</url>
 
-  <modules>
-    <module>submodule-one</module>
-    <module>submodule-two</module>
-  </modules>
+	<modules>
+		<module>submodule-one</module>
+		<module>submodule-two</module>
+	</modules>
 
-  <licenses>
-    <license>
-      <name>GNU Lesser General Public License 3.0</name>
-      <url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
-    </license>
-  </licenses>
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License 3.0</name>
+			<url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
+		</license>
+	</licenses>
 
-  <scm>
-    <url>git@github.com/ktoso/maven-git-commit-id-plugin.git</url>
-    <connection>scm:git:https://github.com/ktoso/maven-git-commit-id-plugin</connection>
-    <developerConnection>scm:git:git@github.com:ktoso/maven-git-commit-id-plugin.git</developerConnection>
-  </scm>
+	<scm>
+		<url>git@github.com/ktoso/maven-git-commit-id-plugin.git</url>
+		<connection>scm:git:https://github.com/ktoso/maven-git-commit-id-plugin</connection>
+		<developerConnection>scm:git:git@github.com:ktoso/maven-git-commit-id-plugin.git</developerConnection>
+	</scm>
 
-  <properties>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.target>1.7</java.target>
-    
-    <git-commit-id-version>2.2.2</git-commit-id-version>
-  </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.target>1.7</java.target>
 
-  <dependencies>
-  </dependencies>
+		<git-commit-id-version>2.2.2</git-commit-id-version>
+	</properties>
 
-  <build>
-    <!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
-    <plugins>
-      <plugin>
-        <groupId>pl.project13.maven</groupId>
-        <artifactId>git-commit-id-plugin</artifactId>
-        <version>${git-commit-id-version}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>revision</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <prefix>git</prefix>
-          <verbose>true</verbose>
-          <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-          <generateGitPropertiesFile>true</generateGitPropertiesFile>
-          <!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>-->
-          <generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>
-        </configuration>
-      </plugin>
+	<dependencies>
+	</dependencies>
 
-      <!-- Setting built-in java compiler properties -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.5.1</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-          <source>${java.target}</source>
-          <target>${java.target}</target>
-        </configuration>
-      </plugin>
+	<build>
+		<!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
+		<plugins>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+				<version>${git-commit-id-version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<prefix>git</prefix>
+					<verbose>true</verbose>
+					<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+					<generateGitPropertiesFile>true</generateGitPropertiesFile>
+					<!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename> -->
+					<generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>
+				</configuration>
+			</plugin>
 
-    </plugins>
-  </build>
+			<!-- Setting built-in java compiler properties -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<source>${java.target}</source>
+					<target>${java.target}</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
 
