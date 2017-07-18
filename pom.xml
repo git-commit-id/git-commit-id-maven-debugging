@@ -66,6 +66,8 @@
 				<configuration>
 					<prefix>git</prefix>
 					<verbose>true</verbose>
+          <skipPoms>false</skipPoms>
+          <runOnlyOnce>true</runOnlyOnce>
 					<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
           <injectAllReactorProjects>true</injectAllReactorProjects>
 					<generateGitPropertiesFile>true</generateGitPropertiesFile>
