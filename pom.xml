@@ -67,6 +67,7 @@
 					<prefix>git</prefix>
 					<verbose>true</verbose>
 					<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+          <injectAllReactorProjects>true</injectAllReactorProjects>
 					<generateGitPropertiesFile>true</generateGitPropertiesFile>
 					<!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename> -->
 					<generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>
@@ -93,9 +94,10 @@
 						<phase>package</phase>
 						<configuration>
 							<target>
-								<echo>root-dir: ${user.dir}</echo>
+								<echo>user.dir: ${user.dir}</echo>
 								<echo>basedir: ${basedir}</echo>
 								<echo>project.basedir: ${project.basedir}</echo>
+                <echo>Git-Infos: ${git.commit.id}</echo>
 							</target>
 						</configuration>
 						<goals>
