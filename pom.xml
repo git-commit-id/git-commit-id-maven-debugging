@@ -33,9 +33,9 @@
 	</licenses>
 
 	<scm>
-		<url>git@github.com/ktoso/maven-git-commit-id-plugin.git</url>
-		<connection>scm:git:https://github.com/ktoso/maven-git-commit-id-plugin</connection>
-		<developerConnection>scm:git:git@github.com:ktoso/maven-git-commit-id-plugin.git</developerConnection>
+		<url>git@github.com:TheSnoozer/git-commit-id-debugging.git</url>
+		<connection>scm:git:git@github.com:TheSnoozer/git-commit-id-debugging.git</connection>
+		<developerConnection>scm:git:git@github.com:TheSnoozer/git-commit-id-debugging.git</developerConnection>
 	</scm>
 
 	<properties>
