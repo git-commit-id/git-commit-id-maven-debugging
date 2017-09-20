@@ -12,7 +12,7 @@
 	<artifactId>git-commit-id-plugin</artifactId>
 	<packaging>pom</packaging>
 
-	<version>0.0.1</version>
+	<version>0.0.1-SNAPSHOT</version>
 
 	<name>Git Commit Id Plugin Maven Mojo Debugging</name>
 	<description>
