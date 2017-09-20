@@ -43,7 +43,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.target>1.7</java.target>
 
-		<git-commit-id-version>2.2.4-SNAPSHOT</git-commit-id-version>
+		<git-commit-id-version>2.2.3</git-commit-id-version>
 	</properties>
 
 	<dependencies>
