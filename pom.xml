@@ -16,8 +16,8 @@
 
 	<name>Git Commit Id Plugin Maven Mojo Debugging</name>
 	<description>
-   Debugging Project for https://github.com/ktoso/maven-git-commit-id-plugin
-  </description>
+		Debugging Project for https://github.com/ktoso/maven-git-commit-id-plugin
+	</description>
 	<url>http://www.blog.project13.pl</url>
 
 	<modules>
@@ -50,6 +50,15 @@
 	</dependencies>
 
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.5.3</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<!-- Setting built-in java compiler properties -->
 			<plugin>
