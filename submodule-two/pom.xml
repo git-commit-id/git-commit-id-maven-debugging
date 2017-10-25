@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>pl.project13.maven</groupId>
 		<artifactId>git-commit-id-plugin-debugging</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
+		<version>0.0.2</version>
 	</parent>
 
 	<groupId>pl.project13.maven</groupId>
 	<artifactId>submodule-two</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<properties>
