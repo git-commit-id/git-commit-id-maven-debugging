@@ -19,8 +19,59 @@
 	</properties>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+
 		<plugins>
-			
+			<!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+				<version>${git-commit-id-version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<prefix>git</prefix>
+					<verbose>true</verbose>
+					<skipPoms>false</skipPoms>
+					<!-- <runOnlyOnce>true</runOnlyOnce> -->
+					<reactorRootDir>${project.basedir}/../.git</reactorRootDir>
+					<injectAllReactorProjects>true</injectAllReactorProjects>
+					<generateGitPropertiesFile>false</generateGitPropertiesFile>
+					<!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>-->
+					<!--<generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>-->
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<configuration>
+							<target>
+								<echo>user.dir: ${user.dir}</echo>
+								<echo>basedir: ${basedir}</echo>
+								<echo>project.basedir: ${project.basedir}</echo>
+								<echo>Git-Infos: ${git.commit.id}</echo>
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>
