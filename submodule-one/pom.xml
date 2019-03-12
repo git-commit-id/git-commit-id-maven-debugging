@@ -32,27 +32,16 @@
 				<version>${git-commit-id-version}</version>
 				<executions>
 					<execution>
-						<phase>validate</phase>
 						<id>get-the-git-infos-validate</id>
 						<goals>
 							<goal>revision</goal>
 						</goals>
-						<configuration>
-							<generateGitPropertiesFilename>${project.build.outputDirectory}/validate_git.properties</generateGitPropertiesFilename>
-						</configuration>
-					</execution>
-					<execution>
-						<phase>initialize</phase>
-						<id>get-the-git-infos-initialize</id>
-						<goals>
-							<goal>revision</goal>
-						</goals>
-						<configuration>
-							<generateGitPropertiesFilename>${project.build.outputDirectory}/initialize_git.properties</generateGitPropertiesFilename>
-						</configuration>
 					</execution>
 				</executions>
 				<configuration>
+					<excludeProperties>
+						<excludeProperty>git.*.user.*</excludeProperty>
+					</excludeProperties>
 					<prefix>git</prefix>
 					<verbose>true</verbose>
 					<skipPoms>false</skipPoms>
@@ -60,8 +49,8 @@
 					<dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
 					<injectAllReactorProjects>true</injectAllReactorProjects>
 					<generateGitPropertiesFile>true</generateGitPropertiesFile>
-					<!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>-->
-					<!--<generateGitPropertiesFilename>target/classes/git.properties</generateGitPropertiesFilename>-->
+					<evaluateOnCommit>HEAD^1</evaluateOnCommit>
+					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
 				</configuration>
 			</plugin>
 
