@@ -39,9 +39,11 @@
 					</execution>
 				</executions>
 				<configuration>
+					<!--
 					<excludeProperties>
 						<excludeProperty>git.*.user.*</excludeProperty>
 					</excludeProperties>
+					-->
 					<prefix>git</prefix>
 					<verbose>true</verbose>
 					<skipPoms>false</skipPoms>
@@ -52,6 +54,26 @@
 					<evaluateOnCommit>HEAD^1</evaluateOnCommit>
 					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.1.1</version>
+				<configuration>
+				  <descriptorRefs>
+					<descriptorRef>jar-with-dependencies</descriptorRef>
+				  </descriptorRefs>
+				</configuration>
+				<executions>
+				  <execution>
+					<id>make-assembly</id> <!-- this is used for inheritance merges -->
+					<phase>package</phase> <!-- bind to the packaging phase -->
+					<goals>
+					  <goal>single</goal>
+					</goals>
+				  </execution>
+				</executions>
 			</plugin>
 
 			<plugin>
