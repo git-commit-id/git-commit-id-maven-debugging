@@ -42,8 +42,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.target>1.8</java.target>
-
-		<git-commit-id-version>2.2.5</git-commit-id-version>
+		<!--<git-commit-id-version>2.2.5</git-commit-id-version> -->
+		<git-commit-id-version>3.0.0-SNAPSHOT</git-commit-id-version>
+		<sonar.projectVersion>${project.version}-${git.branch}</sonar.projectVersion>
 	</properties>
 
 	<dependencies>
@@ -56,6 +57,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-release-plugin</artifactId>
 					<version>2.5.3</version>
+				</plugin>
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>3.6.0.1398</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -73,5 +79,53 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>git-with-parent</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>pl.project13.maven</groupId>
+						<artifactId>git-commit-id-plugin</artifactId>
+						<version>${git-commit-id-version}</version>
+						<executions>
+							<execution>
+								<id>get-the-git-infos</id>
+								<goals>
+									<goal>revision</goal>
+								</goals>
+								<phase>initialize</phase>
+							</execution>
+							<execution>
+								<id>validate-the-git-infos</id>
+								<goals>
+									<goal>validateRevision</goal>
+								</goals>
+								<phase>compile</phase>
+							</execution>
+						</executions>
+						<configuration>
+							<prefix>git</prefix>
+							<skipPoms>false</skipPoms>
+							<verbose>true</verbose>
+							<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+							<injectAllReactorProjects>true</injectAllReactorProjects>
+							<generateGitPropertiesFile>true</generateGitPropertiesFile>
+							<evaluateOnCommit>HEAD</evaluateOnCommit>
+							<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+							<replacementProperties>
+								<replacementProperty>
+									<property>sonar.projectVersion</property>
+									<token>^.*$</token>
+									<value>${project.version}-${git.branch}</value>
+									<regex>false</regex>
+								</replacementProperty>
+							</replacementProperties>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
 

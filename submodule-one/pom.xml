@@ -26,56 +26,9 @@
 
 		<plugins>
 			<!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
-			<plugin>
-				<groupId>pl.project13.maven</groupId>
-				<artifactId>git-commit-id-plugin</artifactId>
-				<version>${git-commit-id-version}</version>
-				<executions>
-					<execution>
-						<id>get-the-git-infos-validate</id>
-						<goals>
-							<goal>revision</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<!--
-					<excludeProperties>
-						<excludeProperty>git.*.user.*</excludeProperty>
-					</excludeProperties>
-					-->
-					<prefix>git</prefix>
-					<verbose>true</verbose>
-					<skipPoms>false</skipPoms>
-					<!-- <runOnlyOnce>true</runOnlyOnce> -->
-					<dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
-					<injectAllReactorProjects>true</injectAllReactorProjects>
-					<generateGitPropertiesFile>true</generateGitPropertiesFile>
-					<evaluateOnCommit>HEAD^1</evaluateOnCommit>
-					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
-				</configuration>
-			</plugin>
+<!--
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.1.1</version>
-				<configuration>
-				  <descriptorRefs>
-					<descriptorRef>jar-with-dependencies</descriptorRef>
-				  </descriptorRefs>
-				</configuration>
-				<executions>
-				  <execution>
-					<id>make-assembly</id> <!-- this is used for inheritance merges -->
-					<phase>package</phase> <!-- bind to the packaging phase -->
-					<goals>
-					  <goal>single</goal>
-					</goals>
-				  </execution>
-				</executions>
-			</plugin>
-
+-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
@@ -99,4 +52,54 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>git-with-submodule</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>pl.project13.maven</groupId>
+						<artifactId>git-commit-id-plugin</artifactId>
+						<version>${git-commit-id-version}</version>
+						<executions>
+							<execution>
+								<phase>initialize</phase>
+								<id>get-the-git-infos-for-repository-one</id>
+								<goals>
+									<goal>revision</goal>
+								</goals>
+								<configuration>
+									<prefix>git1</prefix>
+									<dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
+									<generateGitPropertiesFilename>${project.build.outputDirectory}/repository_one_git.properties</generateGitPropertiesFilename>
+								</configuration>
+							</execution>
+							<execution>
+								<phase>initialize</phase>
+								<id>get-the-git-infos-for-repository-two</id>
+								<goals>
+									<goal>revision</goal>
+								</goals>
+								<configuration>
+									<prefix>git2</prefix>
+									<dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
+									<generateGitPropertiesFilename>${project.build.outputDirectory}/repository_two_git.properties</generateGitPropertiesFilename>
+								</configuration>
+							</execution>
+						</executions>
+						<configuration>
+							<prefix>git</prefix>
+							<verbose>true</verbose>
+							<skipPoms>false</skipPoms>
+							<dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
+							<injectAllReactorProjects>true</injectAllReactorProjects>
+							<generateGitPropertiesFile>true</generateGitPropertiesFile>
+							<evaluateOnCommit>HEAD</evaluateOnCommit>
+							<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
