@@ -43,7 +43,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.target>1.8</java.target>
 		<!--<git-commit-id-version>2.2.5</git-commit-id-version> -->
-		<git-commit-id-version>3.0.0-SNAPSHOT</git-commit-id-version>
+		<git-commit-id-version>3.0.0</git-commit-id-version>
 		<sonar.projectVersion>${project.version}-${git.branch}</sonar.projectVersion>
 	</properties>
 
@@ -107,7 +107,7 @@
 						<configuration>
 							<prefix>git</prefix>
 							<skipPoms>false</skipPoms>
-							<verbose>true</verbose>
+							<verbose>false</verbose>
 							<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
 							<injectAllReactorProjects>true</injectAllReactorProjects>
 							<generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -115,13 +115,33 @@
 							<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
 							<replacementProperties>
 								<replacementProperty>
-									<property>sonar.projectVersion</property>
-									<token>^.*$</token>
-									<value>${project.version}-${git.branch}</value>
-									<regex>false</regex>
+									<property>git.commit.id.describe</property>
+									<propertyOutputSuffix>withoutdirty</propertyOutputSuffix>
+									<token>^(.*?)(-dirty)?$</token>
+									<value>$1</value>
 								</replacementProperty>
 							</replacementProperties>
 						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>1.8</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<configuration>
+									<target>
+										<echo>===========================================================================</echo>
+										<echo>git.commit.id.describe: ${git.commit.id.describe}</echo>
+										<echo>git.commit.id.describe.withoutdirty: ${git.commit.id.describe.withoutdirty}</echo>
+									</target>
+								</configuration>
+								<goals>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>
