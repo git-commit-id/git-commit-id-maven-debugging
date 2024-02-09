@@ -23,9 +23,19 @@
 				<filtering>true</filtering>
 			</resource>
 		</resources>
-
 		<plugins>
-			<!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
+			<!--
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<pomPropertiesFile>META-INF/maven/${project.groupId}/${project.artifactId}/pom.properties</pomPropertiesFile>
+					</archive>
+				</configuration>
+			</plugin>
+			-->
+                    <!-- GIT COMMIT ID PLUGIN CONFIGURATION -->
 <!--
 
 
