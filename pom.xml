@@ -7,7 +7,7 @@
 		<version>9</version>
 	</parent>
 
-	<groupId>pl.project13.maven</groupId>
+	<groupId>io.github.git-commit-id</groupId>
 	<artifactId>git-commit-id-plugin-debugging</artifactId>
 	<packaging>pom</packaging>
 
@@ -43,7 +43,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.target>1.8</java.target>
 		<!--<git-commit-id-version>2.2.5</git-commit-id-version> -->
-		<git-commit-id-version>8.0.1-SNAPSHOT</git-commit-id-version>
+		<git-commit-id-version>9.0.2</git-commit-id-version>
 		<sonar.projectVersion>${project.version}-${git.branch}</sonar.projectVersion>
 		<git-commit-plugin-prefix>git</git-commit-plugin-prefix>
 	</properties>
@@ -163,7 +163,7 @@
 			<build>
 				<plugins>
 					<plugin>
-						<groupId>pl.project13.maven</groupId>
+						<groupId>io.github.git-commit-id</groupId>
 						<artifactId>git-commit-id-plugin</artifactId>
 						<version>${git-commit-id-version}</version>
 						<executions>
